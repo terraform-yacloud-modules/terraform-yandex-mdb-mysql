@@ -78,7 +78,7 @@ module "mysql" {
 
 | Name | Version |
 |------|---------|
-| <a name="provider_yandex"></a> [yandex](#provider\_yandex) | >= 0.95, < 1.0 |
+| <a name="provider_yandex"></a> [yandex](#provider\_yandex) | >= 0.110, < 1.0 |
 
 ## Modules
 
