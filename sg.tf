@@ -1,4 +1,4 @@
-resource "yandex_vpc_security_group" "mysql-sg" {
+resource "yandex_vpc_security_group" "mysql" {
   name       = "${var.name}-sg"
   network_id = var.network_id
 

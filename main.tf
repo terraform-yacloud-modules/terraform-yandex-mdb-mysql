@@ -7,7 +7,7 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
   network_id          = var.network_id
   labels              = var.labels
   version             = var.version_sql
-  security_group_ids  = var.attach_security_group_ids == null ? [yandex_vpc_security_group.mysql-sg.id] : concat([yandex_vpc_security_group.mysql-sg.id], var.attach_security_group_ids)
+  security_group_ids  = var.attach_security_group_ids == null ? [yandex_vpc_security_group.mysql.id] : concat([yandex_vpc_security_group.mysql.id], var.attach_security_group_ids)
   deletion_protection = var.deletion_protection
 
   resources {
@@ -20,7 +20,7 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
     for_each = [var.maintenance_window]
     content {
       type = lookup(maintenance_window.value, "type", "ANYTIME")
-      day = lookup(maintenance_window.value, "day", null)
+      day  = lookup(maintenance_window.value, "day", null)
       hour = lookup(maintenance_window.value, "hour", null)
     }
   }

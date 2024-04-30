@@ -143,10 +143,10 @@ variable "maintenance_window" {
     hour = null
   }
   validation {
-    condition     = (
-    (contains(["ANYTIME", "WEEKLY"], var.maintenance_window.type)) &&
-    ((var.maintenance_window.day == null && var.maintenance_window.type == "ANYTIME" ) ? true : (contains(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], var.maintenance_window.day)) && var.maintenance_window.type == "WEEKLY") &&
-    ((var.maintenance_window.hour == null && var.maintenance_window.type == "ANYTIME" ) ? true : ((var.maintenance_window.hour >= 1 && var.maintenance_window.hour <= 24)) && var.maintenance_window.type == "WEEKLY")
+    condition = (
+      (contains(["ANYTIME", "WEEKLY"], var.maintenance_window.type)) &&
+      ((var.maintenance_window.day == null && var.maintenance_window.type == "ANYTIME") ? true : (contains(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], var.maintenance_window.day)) && var.maintenance_window.type == "WEEKLY") &&
+      ((var.maintenance_window.hour == null && var.maintenance_window.type == "ANYTIME") ? true : ((var.maintenance_window.hour >= 1 && var.maintenance_window.hour <= 24)) && var.maintenance_window.type == "WEEKLY")
     )
     error_message = <<EOF
     Invalid values.
