@@ -94,10 +94,10 @@ variable "resource_preset_id" {
   type        = string
   description = "(Optional) The ID of the preset for computational resources available to a MySQL host. Default 's1.micro' "
   default     = "s1.micro"
-  validation {
-    condition     = contains(["s1.micro", "s2.micro", "s1.small", "s2.small", "s1.medium", "s2.medium", "s1.large", "s2.large", "s1.xlarge", "s2.xlarge", "b1.medium"], var.resource_preset_id)
-    error_message = "Invalid the ID of the preset for computational resources available to a MySQL host. Allow \"Intel Broadwell\" and \"Intel Cascade Lake\" (not all)"
-  }
+  # validation {
+  #   condition     = contains(["s1.micro", "s2.micro", "s1.small", "s2.small", "s1.medium", "s2.medium", "s1.large", "s2.large", "s1.xlarge", "s2.xlarge", "b1.medium"], var.resource_preset_id)
+  #   error_message = "Invalid the ID of the preset for computational resources available to a MySQL host. Allow \"Intel Broadwell\" and \"Intel Cascade Lake\" (not all)"
+  # }
 }
 
 variable "disk_type_id" {
@@ -226,7 +226,7 @@ variable "performance_diagnostics" {
   enabled                      - Enable performance diagnostics
   sessions_sampling_interval   - Interval (in seconds) for my_stat_activity sampling Acceptable values are 1 to 86400, inclusive.
   statements_sampling_interval - Interval (in seconds) for my_stat_statements sampling Acceptable values are 1 to 86400, inclusive.
-  
+
   performance_diagnostics = {
     enabled                      = true
     sessions_sampling_interval   = 30
