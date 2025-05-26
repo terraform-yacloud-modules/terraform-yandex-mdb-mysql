@@ -1,4 +1,3 @@
-# Получение информации о клиенте
 data "yandex_client_config" "client" {}
 
 resource "yandex_vpc_network" "main" {
@@ -16,7 +15,6 @@ resource "yandex_vpc_gateway" "nat" {
 resource "yandex_vpc_route_table" "private" {
   folder_id   = "b1gts6lhpg0oskqf7v32"
   name        = "vpc-nat-gateway-prv-0"
-  description = "VPC route for private subnet"
   network_id  = yandex_vpc_network.main.id
 
   static_route {
@@ -35,29 +33,8 @@ resource "yandex_vpc_subnet" "private" {
 
 }
 
-resource "yandex_vpc_security_group" "mysql" {
-  name       = "my-mysql-cluster-sg"
-  network_id = yandex_vpc_network.main.id
-
-  ingress {
-    description    = "MySQL (TCP:3306)"
-    protocol       = "TCP"
-    port           = 3306
-    v4_cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description    = "Allow ANY output traffic"
-    protocol       = "ANY"
-    from_port      = 0
-    to_port        = 65535
-    v4_cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 resource "yandex_mdb_mysql_cluster" "mysql" {
   name                        = "my-mysql-cluster"
-  description                 = "MySQL cluster created by Terraform"
   environment                 = "PRODUCTION"
   version                     = "8.0"
   folder_id                   = "b1gts6lhpg0oskqf7v32"
@@ -65,7 +42,6 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
   backup_retain_period_days   = 14
   deletion_protection         = false
   allow_regeneration_host     = false
-  security_group_ids          = [yandex_vpc_security_group.mysql.id]
 
   mysql_config = {
     default_authentication_plugin = "MYSQL_NATIVE_PASSWORD"
