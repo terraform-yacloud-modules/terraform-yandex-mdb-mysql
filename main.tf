@@ -5,30 +5,11 @@ resource "yandex_vpc_network" "main" {
   name      = "vpc-nat-gateway"
 }
 
-resource "yandex_vpc_gateway" "nat" {
-  folder_id = "b1gts6lhpg0oskqf7v32"
-  name      = "vpc-nat-gateway-nat"
-
-  shared_egress_gateway {}
-}
-
-resource "yandex_vpc_route_table" "private" {
-  folder_id   = "b1gts6lhpg0oskqf7v32"
-  name        = "vpc-nat-gateway-prv-0"
-  network_id  = yandex_vpc_network.main.id
-
-  static_route {
-    destination_prefix = "0.0.0.0/0"
-    gateway_id         = yandex_vpc_gateway.nat.id
-  }
-}
-
 resource "yandex_vpc_subnet" "private" {
   folder_id      = "b1gts6lhpg0oskqf7v32"
   name           = "vpc-nat-gateway-prv-ru-central1-a"
   zone           = "ru-central1-a"
   network_id     = yandex_vpc_network.main.id
-  route_table_id = yandex_vpc_route_table.private.id
   v4_cidr_blocks = ["10.4.0.0/24"]
 
 }
