@@ -74,12 +74,6 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
     sql_mode                      = "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
   }
 
-  access {
-    data_lens     = false
-    data_transfer = false
-    web_sql       = true
-  }
-
   backup_window_start {
     hours   = 3
     minutes = 0
@@ -87,12 +81,6 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
 
   maintenance_window {
     type = "ANYTIME"
-  }
-
-  performance_diagnostics {
-    enabled                      = true
-    sessions_sampling_interval   = 3600
-    statements_sampling_interval = 7200
   }
 
   resources {
@@ -105,8 +93,5 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
     zone               = "ru-central1-a"
     name               = "my-mysql-cluster-db-host-1"
     subnet_id          = yandex_vpc_subnet.private.id
-    assign_public_ip   = false
-    backup_priority    = 0
-    priority           = 0
   }
 }
