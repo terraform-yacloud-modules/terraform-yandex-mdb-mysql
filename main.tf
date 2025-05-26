@@ -39,25 +39,7 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
   version                     = "8.0"
   folder_id                   = "b1gts6lhpg0oskqf7v32"
   network_id                  = yandex_vpc_network.main.id
-  backup_retain_period_days   = 14
-  deletion_protection         = false
   allow_regeneration_host     = false
-
-  mysql_config = {
-    default_authentication_plugin = "MYSQL_NATIVE_PASSWORD"
-    innodb_print_all_deadlocks    = "true"
-    max_connections               = "100"
-    sql_mode                      = "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"
-  }
-
-  backup_window_start {
-    hours   = 3
-    minutes = 0
-  }
-
-  maintenance_window {
-    type = "ANYTIME"
-  }
 
   resources {
     resource_preset_id = "s1.micro"
