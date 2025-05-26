@@ -4,17 +4,11 @@ data "yandex_client_config" "client" {}
 resource "yandex_vpc_network" "main" {
   folder_id = "b1gts6lhpg0oskqf7v32"
   name      = "vpc-nat-gateway"
-  labels = {
-    repo = "terraform-yacloud-modules/terraform-yandex-vpc"
-  }
 }
 
 resource "yandex_vpc_gateway" "nat" {
   folder_id = "b1gts6lhpg0oskqf7v32"
   name      = "vpc-nat-gateway-nat"
-  labels = {
-    repo = "terraform-yacloud-modules/terraform-yandex-vpc"
-  }
 
   shared_egress_gateway {}
 }
@@ -24,10 +18,6 @@ resource "yandex_vpc_route_table" "private" {
   name        = "vpc-nat-gateway-prv-0"
   description = "VPC route for private subnet"
   network_id  = yandex_vpc_network.main.id
-
-  labels = {
-    repo = "terraform-yacloud-modules/terraform-yandex-vpc"
-  }
 
   static_route {
     destination_prefix = "0.0.0.0/0"
@@ -43,9 +33,6 @@ resource "yandex_vpc_subnet" "private" {
   route_table_id = yandex_vpc_route_table.private.id
   v4_cidr_blocks = ["10.4.0.0/24"]
 
-  labels = {
-    repo = "terraform-yacloud-modules/terraform-yandex-vpc"
-  }
 }
 
 resource "yandex_vpc_security_group" "mysql" {
@@ -79,10 +66,6 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
   deletion_protection         = false
   allow_regeneration_host     = false
   security_group_ids          = [yandex_vpc_security_group.mysql.id]
-
-  labels = {
-    created_by = "terraform_mysql_module"
-  }
 
   mysql_config = {
     default_authentication_plugin = "MYSQL_NATIVE_PASSWORD"
