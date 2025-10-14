@@ -81,4 +81,11 @@ module "mysql" {
   count_ha            = 3
 
   depends_on = [module.network]
+
+  timeouts = {
+    create = "45m"
+    update = "45m"
+    delete = "45m"
+  }
+
 }

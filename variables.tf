@@ -247,3 +247,14 @@ variable "attach_security_group_ids" {
   default     = null
   description = "(Optional) Attach an additional security group."
 }
+
+
+variable "timeouts" {
+  description = "Timeout settings for cluster operations"
+  type = object({
+    create = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+  default = null
+}
