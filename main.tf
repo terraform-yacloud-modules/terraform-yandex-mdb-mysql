@@ -1,14 +1,16 @@
 
 resource "yandex_mdb_mysql_cluster" "mysql" {
-  name                = var.name
-  description         = var.description
-  folder_id           = local.folder_id
-  environment         = var.environment
-  network_id          = var.network_id
-  labels              = var.labels
-  version             = var.version_sql
-  security_group_ids  = var.attach_security_group_ids == null ? [yandex_vpc_security_group.mysql.id] : concat([yandex_vpc_security_group.mysql.id], var.attach_security_group_ids)
-  deletion_protection = var.deletion_protection
+  name                   = var.name
+  description            = var.description
+  folder_id              = local.folder_id
+  environment            = var.environment
+  network_id             = var.network_id
+  labels                 = var.labels
+  version                = var.version_sql
+  security_group_ids     = var.attach_security_group_ids == null ? [yandex_vpc_security_group.mysql.id] : concat([yandex_vpc_security_group.mysql.id], var.attach_security_group_ids)
+  deletion_protection    = var.deletion_protection
+  disk_encryption_key_id = var.disk_encryption_key_id
+  host_group_ids         = var.host_group_ids
 
   resources {
     resource_preset_id = var.resource_preset_id
@@ -80,6 +82,15 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
       enabled                      = var.performance_diagnostics != null ? true : false
       sessions_sampling_interval   = coalesce(performance_diagnostics.value["sessions_sampling_interval"], 3600)
       statements_sampling_interval = coalesce(performance_diagnostics.value["statements_sampling_interval"], 7200)
+    }
+  }
+
+  dynamic "disk_size_autoscaling" {
+    for_each = var.disk_size_autoscaling == null ? [] : [var.disk_size_autoscaling]
+    content {
+      disk_size_limit           = disk_size_autoscaling.value.disk_size_limit
+      emergency_usage_threshold = try(disk_size_autoscaling.value.emergency_usage_threshold, null)
+      planned_usage_threshold   = try(disk_size_autoscaling.value.planned_usage_threshold, null)
     }
   }
 

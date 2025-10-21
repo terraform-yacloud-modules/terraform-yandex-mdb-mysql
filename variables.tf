@@ -258,3 +258,30 @@ variable "timeouts" {
   })
   default = null
 }
+
+variable "disk_encryption_key_id" {
+  type        = string
+  default     = null
+  description = "(Optional) ID of the symmetric encryption key used to encrypt the disk of the cluster."
+}
+
+variable "host_group_ids" {
+  type        = list(string)
+  default     = null
+  description = "(Optional) A list of host group IDs to place VMs of the cluster on."
+}
+
+variable "disk_size_autoscaling" {
+  type = object({
+    disk_size_limit           = number
+    emergency_usage_threshold = optional(number)
+    planned_usage_threshold   = optional(number)
+  })
+  default     = null
+  description = <<EOF
+  (Optional) Cluster disk size autoscaling settings.
+  disk_size_limit           - (Required) Limit of disk size after autoscaling (GiB).
+  emergency_usage_threshold - (Optional) Immediate autoscaling disk usage threshold (percent).
+  planned_usage_threshold   - (Optional) Maintenance window autoscaling disk usage threshold (percent).
+  EOF
+}
