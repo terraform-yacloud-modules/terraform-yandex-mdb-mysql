@@ -86,3 +86,18 @@ output "performance_diagnostics" {
     statements_sampling_interval = yandex_mdb_mysql_cluster.mysql.performance_diagnostics[0].statements_sampling_interval
   }
 }
+
+output "disk_encryption_key_id" {
+  description = "The ID of the disk encryption key used for the MySQL cluster"
+  value       = yandex_mdb_mysql_cluster.mysql.disk_encryption_key_id
+}
+
+output "host_group_ids" {
+  description = "The list of host group IDs used for the MySQL cluster"
+  value       = yandex_mdb_mysql_cluster.mysql.host_group_ids
+}
+
+output "disk_size_autoscaling" {
+  description = "The disk size autoscaling settings of the MySQL cluster"
+  value       = yandex_mdb_mysql_cluster.mysql.disk_size_autoscaling
+}

@@ -50,7 +50,9 @@ module "mysql" {
 
   # Настройки обслуживания
   maintenance_window = {
-    type = "ANYTIME"
+    type = "WEEKLY"
+    day  = "MON"
+    hour = 3
   }
 
   # Настройки резервного копирования
@@ -72,6 +74,13 @@ module "mysql" {
     enabled                      = true
     sessions_sampling_interval   = 3600
     statements_sampling_interval = 7200
+  }
+
+  # Настройки автоскейлинга диска
+  disk_size_autoscaling = {
+    disk_size_limit           = 100
+    emergency_usage_threshold = 90
+    planned_usage_threshold   = 80
   }
 
   # Другие настройки
