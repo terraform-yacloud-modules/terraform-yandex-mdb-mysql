@@ -19,7 +19,7 @@ module "network" {
 }
 
 module "mysql" {
-  source = "../"
+  source = "../../"
 
   # Общие настройки
   name         = "my-mysql-cluster"
