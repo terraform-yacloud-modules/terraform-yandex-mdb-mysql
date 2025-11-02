@@ -167,6 +167,15 @@ variable "backup_window_start" {
   })
   default     = null
   description = "(Optional) Time to start the daily backup, in the UTC."
+  validation {
+    condition = (
+      var.backup_window_start == null ? true : (
+        (var.backup_window_start.hours == null ? true : (var.backup_window_start.hours >= 0 && var.backup_window_start.hours <= 23)) &&
+        (var.backup_window_start.minutes == null ? true : (var.backup_window_start.minutes >= 0 && var.backup_window_start.minutes <= 59))
+      )
+    )
+    error_message = "Invalid backup window start time. Hours must be between 0-23, minutes between 0-59."
+  }
 }
 
 variable "backup_retain_period_days" {
@@ -233,6 +242,15 @@ variable "performance_diagnostics" {
     statements_sampling_interval = 90
   }
   EOF
+  validation {
+    condition = (
+      var.performance_diagnostics == null ? true : (
+        (var.performance_diagnostics.sessions_sampling_interval == null ? true : (var.performance_diagnostics.sessions_sampling_interval >= 1 && var.performance_diagnostics.sessions_sampling_interval <= 86400)) &&
+        (var.performance_diagnostics.statements_sampling_interval == null ? true : (var.performance_diagnostics.statements_sampling_interval >= 1 && var.performance_diagnostics.statements_sampling_interval <= 86400))
+      )
+    )
+    error_message = "Invalid performance diagnostics intervals. Both sessions_sampling_interval and statements_sampling_interval must be between 1 and 86400 seconds."
+  }
 }
 
 variable "allow_ingress_v4_cidr_blocks" {
@@ -284,4 +302,14 @@ variable "disk_size_autoscaling" {
   emergency_usage_threshold - (Optional) Immediate autoscaling disk usage threshold (percent).
   planned_usage_threshold   - (Optional) Maintenance window autoscaling disk usage threshold (percent).
   EOF
+  validation {
+    condition = (
+      var.disk_size_autoscaling == null ? true : (
+        var.disk_size_autoscaling.disk_size_limit >= 10 && var.disk_size_autoscaling.disk_size_limit <= 6144 &&
+        (var.disk_size_autoscaling.emergency_usage_threshold == null ? true : (var.disk_size_autoscaling.emergency_usage_threshold >= 0 && var.disk_size_autoscaling.emergency_usage_threshold <= 100)) &&
+        (var.disk_size_autoscaling.planned_usage_threshold == null ? true : (var.disk_size_autoscaling.planned_usage_threshold >= 0 && var.disk_size_autoscaling.planned_usage_threshold <= 100))
+      )
+    )
+    error_message = "Invalid disk size autoscaling settings. disk_size_limit must be between 10-6144 GiB, thresholds must be between 0-100%."
+  }
 }
