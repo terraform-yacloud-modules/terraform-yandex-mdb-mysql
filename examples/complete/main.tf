@@ -97,4 +97,8 @@ module "mysql" {
     delete = "45m"
   }
 
+  database_name = "app_db"
+  user_name     = "app_user"
+  user_password = "secure_password_123"
+  user_roles    = ["ALL"]
 }
