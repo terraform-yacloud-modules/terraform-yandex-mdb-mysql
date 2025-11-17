@@ -313,3 +313,27 @@ variable "disk_size_autoscaling" {
     error_message = "Invalid disk size autoscaling settings. disk_size_limit must be between 10-6144 GiB, thresholds must be between 0-100%."
   }
 }
+
+variable "database_name" {
+  type        = string
+  description = "(Required) Name of the MySQL database"
+  default     = "default_db"
+}
+
+variable "user_name" {
+  type        = string
+  description = "(Required) Name of the MySQL user"
+  default     = "default_user"
+}
+
+variable "user_password" {
+  type        = string
+  description = "(Required) Password for the MySQL user"
+  sensitive   = true
+}
+
+variable "user_roles" {
+  type        = list(string)
+  description = "(Optional) Roles for the MySQL user"
+  default     = ["ALL"]
+}

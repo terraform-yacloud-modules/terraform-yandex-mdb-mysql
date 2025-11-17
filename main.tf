@@ -1,4 +1,3 @@
-
 resource "yandex_mdb_mysql_cluster" "mysql" {
   name                   = var.name
   description            = var.description
@@ -102,5 +101,19 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
       delete = try(timeouts.value.delete, null)
     }
   }
+}
 
+resource "yandex_mdb_mysql_database" "mysql_db" {
+  cluster_id = yandex_mdb_mysql_cluster.mysql.id
+  name       = var.database_name
+}
+
+resource "yandex_mdb_mysql_user" "mysql_user" {
+  cluster_id = yandex_mdb_mysql_cluster.mysql.id
+  name       = var.user_name
+  password   = var.user_password
+  permission {
+    database_name = yandex_mdb_mysql_database.mysql_db.name
+    roles         = var.user_roles
+  }
 }
