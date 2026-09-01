@@ -1,3 +1,10 @@
+## v1.39.0 - 2026-09-01
+### Bug Fixes
+- 44074a7 fix: передача folder_id в примере с приоритетом tfvars над YC_FOLDER_ID
+
+### Miscellaneous
+- fceac9b Merge pull request [#73](https://github.com/terraform-yacloud-modules/terraform-yandex-mdb-mysql/pull/73) from terraform-yacloud-modules/feature/add-folder-id-tfvars
+
 ## v1.38.0 - 2026-09-01
 ### Chores
 - 8df2cf2 chore(deps): bump actions/cache from 5.0.3 to 5.0.5 ([#71](https://github.com/terraform-yacloud-modules/terraform-yandex-mdb-mysql/pull/71))
