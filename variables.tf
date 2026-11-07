@@ -121,13 +121,12 @@ variable "disk_size" {
 }
 
 variable "mysql_config" {
-  type = object({
-    sql_mode                      = optional(string)
-    max_connections               = optional(number)
-    default_authentication_plugin = optional(string)
-    innodb_print_all_deadlocks    = optional(bool)
-  })
-  description = "(Optional) MySQL cluster config. Detail info in https://terraform-provider.yandexcloud.net/Resources/mdb_mysql_cluster.html#mysql-config"
+  type        = map(string)
+  description = <<EOF
+  (Optional) MySQL cluster config. Any MySQL configuration parameter supported by the provider can be passed as a key/value pair, e.g. `innodb_buffer_pool_size = "134217728"`.
+  Well-known parameters (`sql_mode`, `max_connections`, `default_authentication_plugin`, `innodb_print_all_deadlocks`) are filled with module defaults when omitted.
+  Detail info in https://terraform-provider.yandexcloud.net/Resources/mdb_mysql_cluster.html#mysql-config
+  EOF
   default     = null
 }
 
@@ -190,19 +189,26 @@ variable "backup_retain_period_days" {
 
 variable "restore" {
   type = object({
-    backup_id = string
-    time      = optional(string)
+    backup_id         = optional(string)
+    source_cluster_id = optional(string)
+    time              = optional(string)
   })
   default     = null
   description = <<EOF
-  (Optional) Time to start the daily backup, in the UTC. The structure is documented below.
-  backup_id - (Required, ForceNew) Backup ID. The cluster will be created from the specified backup.
-  time      - (Optional, ForceNew) Timestamp of the moment to which the MySQL cluster should be restored. (Format: "2006-01-02T15:04:05" - UTC). When not set, current time is used.
+  (Optional) The cluster will be created from the specified backup or source cluster. The structure is documented below.
+  backup_id         - (Optional, ForceNew) Backup ID. The cluster will be created from the specified backup.
+  source_cluster_id - (Optional, ForceNew) ID of the source cluster to restore from.
+  time              - (Optional, ForceNew) Timestamp of the moment to which the MySQL cluster should be restored. (Format: "2006-01-02T15:04:05" - UTC). When not set, current time is used.
   restore = {
     backup_id = "c9qj2tns23432471d9qha:stream_20210122T141717Z"
     time      = "2021-01-23T15:04:05"
   }
+  At least one of `backup_id` or `source_cluster_id` must be set.
   EOF
+  validation {
+    condition     = var.restore == null ? true : (var.restore.backup_id != null || var.restore.source_cluster_id != null)
+    error_message = "At least one of restore.backup_id or restore.source_cluster_id must be set."
+  }
 }
 
 variable "access" {
@@ -210,6 +216,7 @@ variable "access" {
     data_lens     = optional(bool)
     web_sql       = optional(bool)
     data_transfer = optional(bool)
+    yandex_query  = optional(bool)
   })
   default     = null
   description = <<EOF
@@ -217,6 +224,7 @@ variable "access" {
   data_lens     - (Optional) Allow access for Yandex DataLens.
   web_sql       - (Optional) Allows access for SQL queries in the management console.
   data_transfer - (Optional) Allow access for DataTransfer
+  yandex_query  - (Optional) Allow access for Yandex Query.
   access = {
     web_sql = true
   }
@@ -314,26 +322,79 @@ variable "disk_size_autoscaling" {
   }
 }
 
+variable "databases" {
+  type        = list(string)
+  description = "(Optional) List of MySQL databases to create. Takes precedence over `database_name`. The first database is used as the default one for user permissions."
+  default     = null
+  validation {
+    condition     = var.databases == null ? true : (length(var.databases) > 0 && length(var.databases) == length(distinct(var.databases)))
+    error_message = "The databases list must not be empty and must not contain duplicates."
+  }
+}
+
 variable "database_name" {
   type        = string
-  description = "(Required) Name of the MySQL database"
+  description = "(Optional) Name of the single MySQL database. Ignored when `databases` is set."
   default     = "default_db"
+}
+
+variable "users" {
+  type = list(object({
+    name              = string
+    password          = optional(string)
+    generate_password = optional(bool, false)
+    roles             = optional(list(string), ["ALL"])
+    permissions = optional(list(object({
+      database_name = string
+      roles         = optional(list(string), ["ALL"])
+    })))
+    authentication_plugin = optional(string)
+    global_permissions    = optional(list(string))
+    connection_limits = optional(object({
+      max_connections_per_hour = optional(number)
+      max_questions_per_hour   = optional(number)
+      max_updates_per_hour     = optional(number)
+      max_user_connections     = optional(number)
+    }))
+  }))
+  description = <<EOF
+  (Optional) List of MySQL users to create. Takes precedence over the legacy `user_name`, `user_password` and `user_roles` variables.
+  Each user supports:
+  name                  - (Required) Name of the user.
+  password              - (Optional) Password of the user. Required unless `generate_password = true`.
+  generate_password     - (Optional) Generate a random password for the user.
+  roles                 - (Optional) Roles granted on the first database when `permissions` is not set. Default `["ALL"]`.
+  permissions           - (Optional) List of `{ database_name, roles }` objects to grant permissions on several databases.
+  authentication_plugin - (Optional) Authentication plugin, e.g. `MYSQL_NATIVE_PASSWORD`.
+  global_permissions    - (Optional) List of global permissions, e.g. `["PROCESS"]`.
+  connection_limits     - (Optional) Per-user connection limits: `max_connections_per_hour`, `max_questions_per_hour`, `max_updates_per_hour`, `max_user_connections`.
+  EOF
+  default     = null
+  validation {
+    condition     = var.users == null ? true : (length(var.users) > 0 && length(var.users) == length(distinct([for user in var.users : user.name])))
+    error_message = "The users list must not be empty and user names must be unique."
+  }
+  validation {
+    condition     = var.users == null ? true : alltrue([for user in var.users : user.password != null || user.generate_password])
+    error_message = "Each user must have a password or generate_password = true."
+  }
 }
 
 variable "user_name" {
   type        = string
-  description = "(Required) Name of the MySQL user"
+  description = "(Optional) Name of the single MySQL user. Ignored when `users` is set."
   default     = "default_user"
 }
 
 variable "user_password" {
   type        = string
-  description = "(Required) Password for the MySQL user"
+  description = "(Optional) Password for the single MySQL user. Ignored when `users` is set."
   sensitive   = true
+  default     = null
 }
 
 variable "user_roles" {
   type        = list(string)
-  description = "(Optional) Roles for the MySQL user"
+  description = "(Optional) Roles for the single MySQL user. Ignored when `users` is set."
   default     = ["ALL"]
 }

@@ -49,6 +49,7 @@ module "mysql" {
     max_connections               = 100
     default_authentication_plugin = "MYSQL_NATIVE_PASSWORD"
     innodb_print_all_deadlocks    = true
+    innodb_buffer_pool_size       = "134217728"
   }
 
   # Настройки обслуживания
@@ -70,6 +71,7 @@ module "mysql" {
     data_lens     = false
     web_sql       = true
     data_transfer = false
+    yandex_query  = true
   }
 
   # Настройки диагностики производительности
@@ -94,14 +96,36 @@ module "mysql" {
 
   depends_on = [module.network]
 
+  # Несколько баз данных и пользователей с расширенными настройками
+  databases = ["app_db", "analytics_db"]
+
+  users = [
+    {
+      name                  = "app_user"
+      password              = "app-user-password-123"
+      authentication_plugin = "MYSQL_NATIVE_PASSWORD"
+      global_permissions    = ["PROCESS"]
+      roles                 = ["ALL"]
+      connection_limits = {
+        max_user_connections = 50
+      }
+    },
+    {
+      name              = "analytics_reader"
+      generate_password = true
+      permissions = [
+        {
+          database_name = "analytics_db"
+          roles         = ["SELECT"]
+        }
+      ]
+    },
+  ]
+
   timeouts = {
     create = "45m"
     update = "45m"
     delete = "45m"
   }
 
-  database_name = "app_db"
-  user_name     = "app_user"
-  user_password = "secure_password_123"
-  user_roles    = ["ALL"]
 }

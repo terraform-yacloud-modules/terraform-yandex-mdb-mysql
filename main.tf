@@ -41,12 +41,7 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
     }
   }
 
-  mysql_config = var.mysql_config == null ? {} : {
-    sql_mode                      = lookup(var.mysql_config, "sql_mode", "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION")
-    max_connections               = lookup(var.mysql_config, "max_connections", 100)
-    default_authentication_plugin = lookup(var.mysql_config, "default_authentication_plugin", "MYSQL_NATIVE_PASSWORD")
-    innodb_print_all_deadlocks    = lookup(var.mysql_config, "innodb_print_all_deadlocks", true)
-  }
+  mysql_config = local.mysql_config
 
   dynamic "backup_window_start" {
     for_each = var.backup_window_start == null ? [] : [var.backup_window_start]
@@ -61,8 +56,9 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
   dynamic "restore" {
     for_each = var.restore == null ? [] : [var.restore]
     content {
-      backup_id = restore.value["backup_id"]
-      time      = lookup(restore.value, "time", null)
+      backup_id         = restore.value["backup_id"]
+      source_cluster_id = restore.value["source_cluster_id"]
+      time              = lookup(restore.value, "time", null)
     }
   }
 
@@ -72,6 +68,7 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
       data_lens     = lookup(access.value, "data_lens", false)
       web_sql       = lookup(access.value, "web_sql", false)
       data_transfer = lookup(access.value, "data_transfer", false)
+      yandex_query  = lookup(access.value, "yandex_query", false)
     }
   }
 
@@ -105,15 +102,80 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
 
 resource "yandex_mdb_mysql_database" "mysql_db" {
   cluster_id = yandex_mdb_mysql_cluster.mysql.id
-  name       = var.database_name
+  name       = local.primary_database
+}
+
+resource "yandex_mdb_mysql_database" "additional" {
+  for_each = toset(local.additional_databases)
+
+  cluster_id = yandex_mdb_mysql_cluster.mysql.id
+  name       = each.value
 }
 
 resource "yandex_mdb_mysql_user" "mysql_user" {
   cluster_id = yandex_mdb_mysql_cluster.mysql.id
-  name       = var.user_name
-  password   = var.user_password
-  permission {
-    database_name = yandex_mdb_mysql_database.mysql_db.name
-    roles         = var.user_roles
+  name       = local.primary_user.name
+
+  depends_on = [
+    yandex_mdb_mysql_database.mysql_db,
+    yandex_mdb_mysql_database.additional,
+  ]
+
+  password              = local.primary_user.password
+  generate_password     = local.primary_user.generate_password
+  authentication_plugin = local.primary_user.authentication_plugin
+  global_permissions    = local.primary_user.global_permissions
+
+  dynamic "connection_limits" {
+    for_each = local.primary_user.connection_limits == null ? [] : [local.primary_user.connection_limits]
+    content {
+      max_connections_per_hour = try(connection_limits.value.max_connections_per_hour, null)
+      max_questions_per_hour   = try(connection_limits.value.max_questions_per_hour, null)
+      max_updates_per_hour     = try(connection_limits.value.max_updates_per_hour, null)
+      max_user_connections     = try(connection_limits.value.max_user_connections, null)
+    }
+  }
+
+  dynamic "permission" {
+    for_each = local.primary_user.permissions == null ? [{ database_name = local.primary_database, roles = local.primary_user.roles }] : local.primary_user.permissions
+    content {
+      database_name = permission.value.database_name
+      roles         = permission.value.roles
+    }
+  }
+}
+
+resource "yandex_mdb_mysql_user" "additional" {
+  for_each = { for user in local.additional_users : user.name => user }
+
+  cluster_id = yandex_mdb_mysql_cluster.mysql.id
+  name       = each.value.name
+
+  depends_on = [
+    yandex_mdb_mysql_database.mysql_db,
+    yandex_mdb_mysql_database.additional,
+  ]
+
+  password              = each.value.password
+  generate_password     = each.value.generate_password
+  authentication_plugin = each.value.authentication_plugin
+  global_permissions    = each.value.global_permissions
+
+  dynamic "connection_limits" {
+    for_each = each.value.connection_limits == null ? [] : [each.value.connection_limits]
+    content {
+      max_connections_per_hour = try(connection_limits.value.max_connections_per_hour, null)
+      max_questions_per_hour   = try(connection_limits.value.max_questions_per_hour, null)
+      max_updates_per_hour     = try(connection_limits.value.max_updates_per_hour, null)
+      max_user_connections     = try(connection_limits.value.max_user_connections, null)
+    }
+  }
+
+  dynamic "permission" {
+    for_each = each.value.permissions == null ? [{ database_name = local.primary_database, roles = each.value.roles }] : each.value.permissions
+    content {
+      database_name = permission.value.database_name
+      roles         = permission.value.roles
+    }
   }
 }

@@ -75,7 +75,18 @@ output "access" {
     data_lens     = yandex_mdb_mysql_cluster.mysql.access[0].data_lens
     web_sql       = yandex_mdb_mysql_cluster.mysql.access[0].web_sql
     data_transfer = yandex_mdb_mysql_cluster.mysql.access[0].data_transfer
+    yandex_query  = yandex_mdb_mysql_cluster.mysql.access[0].yandex_query
   }
+}
+
+output "database_names" {
+  description = "List of database names created in the MySQL cluster"
+  value       = concat([yandex_mdb_mysql_database.mysql_db.name], [for database in yandex_mdb_mysql_database.additional : database.name])
+}
+
+output "user_names" {
+  description = "List of user names created in the MySQL cluster"
+  value       = concat([yandex_mdb_mysql_user.mysql_user.name], [for user in yandex_mdb_mysql_user.additional : user.name])
 }
 
 output "performance_diagnostics" {
