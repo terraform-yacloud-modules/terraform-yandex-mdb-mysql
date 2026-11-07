@@ -1,3 +1,7 @@
+## v1.40.0 - 2026-11-07
+### Chores
+- d998b7d chore(deps): bump actions/cache from 5.0.5 to 6.1.0 ([#74](https://github.com/terraform-yacloud-modules/terraform-yandex-mdb-mysql/pull/74))
+
 ## v1.39.0 - 2026-09-01
 ### Bug Fixes
 - 44074a7 fix: передача folder_id в примере с приоритетом tfvars над YC_FOLDER_ID
