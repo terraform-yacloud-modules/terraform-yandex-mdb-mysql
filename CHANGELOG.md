@@ -1,3 +1,7 @@
+## v1.42.0 - 2026-11-10
+### Features
+- 573cd64 feat: support multiple databases and users with extended settings ([#76](https://github.com/terraform-yacloud-modules/terraform-yandex-mdb-mysql/pull/76))
+
 ## v1.41.0 - 2026-11-08
 ### Chores
 - d280d36 chore(deps): bump actions/checkout from 6 to 7 ([#75](https://github.com/terraform-yacloud-modules/terraform-yandex-mdb-mysql/pull/75))
