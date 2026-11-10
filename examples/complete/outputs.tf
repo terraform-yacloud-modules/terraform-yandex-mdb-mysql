@@ -67,3 +67,13 @@ output "performance_diagnostics" {
   description = "The performance diagnostics settings of the MySQL cluster"
   value       = module.mysql.performance_diagnostics
 }
+
+output "database_names" {
+  description = "List of database names created in the MySQL cluster"
+  value       = module.mysql.database_names
+}
+
+output "user_names" {
+  description = "List of user names created in the MySQL cluster"
+  value       = module.mysql.user_names
+}
