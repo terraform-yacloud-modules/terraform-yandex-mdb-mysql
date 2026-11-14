@@ -1,3 +1,7 @@
+## v1.43.0 - 2026-11-14
+### Features
+- 808e4d3 feat: add explicit host layout with cascading read replicas ([#77](https://github.com/terraform-yacloud-modules/terraform-yandex-mdb-mysql/pull/77))
+
 ## v1.42.0 - 2026-11-10
 ### Features
 - 573cd64 feat: support multiple databases and users with extended settings ([#76](https://github.com/terraform-yacloud-modules/terraform-yandex-mdb-mysql/pull/76))
