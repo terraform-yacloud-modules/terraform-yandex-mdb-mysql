@@ -9,14 +9,31 @@ Terraform module which creates Yandex Cloud **Managed Service for MySQL** resour
 module "mysql" {
   source           = "../../modules/mysql"
   network_id       = module.vpc.vpc_id
-  ha               = true
-  count_ha         = 3
   subnet_zones     = module.vpc.private_zones
   subnet_id        = module.vpc.private_subnets_id
-  assign_public_ip = false
   name             = "cluster-mysql"
   environment      = "PRESTABLE"
   version_sql      = "8.0"
+
+  # Explicit host layout: two HA hosts and a cascading read replica
+  hosts = [
+    {
+      zone      = module.vpc.private_zones[0]
+      subnet_id = module.vpc.private_subnets_id[0]
+      name      = "mysql-primary"
+    },
+    {
+      zone      = module.vpc.private_zones[0]
+      subnet_id = module.vpc.private_subnets_id[0]
+      name      = "mysql-secondary"
+    },
+    {
+      zone                    = module.vpc.private_zones[0]
+      subnet_id               = module.vpc.private_subnets_id[0]
+      name                    = "mysql-replica"
+      replication_source_name = "mysql-primary"
+    },
+  ]
 
   resource_preset_id = "b1.medium"
   disk_type_id       = "network-ssd"
@@ -97,14 +114,14 @@ module "mysql" {
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
 | <a name="requirement_yandex"></a> [yandex](#requirement\_yandex) | >= 0.110, < 1.0 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_yandex"></a> [yandex](#provider\_yandex) | >= 0.110, < 1.0 |
 
 ## Modules
@@ -114,7 +131,7 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [yandex_mdb_mysql_cluster.mysql](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/mdb_mysql_cluster) | resource |
 | [yandex_mdb_mysql_database.additional](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/mdb_mysql_database) | resource |
 | [yandex_mdb_mysql_database.mysql_db](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/mdb_mysql_database) | resource |
@@ -126,7 +143,7 @@ No modules.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_access"></a> [access](#input\_access) | (Optional) The access block support. If not specified then does not make any changes.<br/>  data\_lens     - (Optional) Allow access for Yandex DataLens.<br/>  web\_sql       - (Optional) Allows access for SQL queries in the management console.<br/>  data\_transfer - (Optional) Allow access for DataTransfer<br/>  yandex\_query  - (Optional) Allow access for Yandex Query.<br/>  access = {<br/>    web\_sql = true<br/>  } | <pre>object({<br/>    data_lens     = optional(bool)<br/>    web_sql       = optional(bool)<br/>    data_transfer = optional(bool)<br/>    yandex_query  = optional(bool)<br/>  })</pre> | `null` | no |
 | <a name="input_allow_ingress_v4_cidr_blocks"></a> [allow\_ingress\_v4\_cidr\_blocks](#input\_allow\_ingress\_v4\_cidr\_blocks) | (Optional) The allowed list of addresses for accessing the database on port 3306. Default `[ "0.0.0.0"/0 ]` | `list(string)` | <pre>[<br/>  "0.0.0.0/0"<br/>]</pre> | no |
 | <a name="input_assign_public_ip"></a> [assign\_public\_ip](#input\_assign\_public\_ip) | (Optional) Sets whether the host should get a public IP address. It can be changed on the fly only when name is set. | `bool` | `false` | no |
@@ -146,6 +163,7 @@ No modules.
 | <a name="input_folder_id"></a> [folder\_id](#input\_folder\_id) | https://cloud.yandex.ru/docs/resource-manager/operations/folder/get-id | `string` | `null` | no |
 | <a name="input_ha"></a> [ha](#input\_ha) | (Optional) High availability cluster? | `bool` | `false` | no |
 | <a name="input_host_group_ids"></a> [host\_group\_ids](#input\_host\_group\_ids) | (Optional) A list of host group IDs to place VMs of the cluster on. | `list(string)` | `null` | no |
+| <a name="input_hosts"></a> [hosts](#input\_hosts) | (Optional) Explicit list of MySQL cluster hosts. When set, it replaces the automatic layout built from `ha`, `count_ha`, `subnet_zones`, `subnet_id` and `assign_public_ip`.<br/>  Each host supports:<br/>  zone                    - (Required) Availability zone of the host.<br/>  subnet\_id               - (Required) ID of the subnet, to which the host belongs.<br/>  name                    - (Optional) Host name. Must be set for all hosts or left unset for all hosts.<br/>  priority                - (Optional) Host master promotion priority, 0-100. Default 0.<br/>  backup\_priority         - (Optional) Host backup priority, 0-100. Default 0.<br/>  assign\_public\_ip        - (Optional) Assign a public IP address to the host. Default false.<br/>  replication\_source\_name - (Optional) Name of the host to replicate from. Makes the host a read replica and requires `name`. | <pre>list(object({<br/>    zone                    = string<br/>    subnet_id               = string<br/>    name                    = optional(string)<br/>    priority                = optional(number, 0)<br/>    backup_priority         = optional(number, 0)<br/>    assign_public_ip        = optional(bool, false)<br/>    replication_source_name = optional(string)<br/>  }))</pre> | `null` | no |
 | <a name="input_labels"></a> [labels](#input\_labels) | (Optional) Set of key/value label pairs to assign. | `map(string)` | <pre>{<br/>  "created_by": "terraform_mysql_module"<br/>}</pre> | no |
 | <a name="input_maintenance_window"></a> [maintenance\_window](#input\_maintenance\_window) | (Optional) Time to start the daily backup, in the UTC. | <pre>object({<br/>    type = optional(string)<br/>    day  = optional(string)<br/>    hour = optional(number)<br/>  })</pre> | <pre>{<br/>  "day": null,<br/>  "hour": null,<br/>  "type": "ANYTIME"<br/>}</pre> | no |
 | <a name="input_mysql_config"></a> [mysql\_config](#input\_mysql\_config) | (Optional) MySQL cluster config. Any MySQL configuration parameter supported by the provider can be passed as a key/value pair, e.g. `innodb_buffer_pool_size = "134217728"`.<br/>  Well-known parameters (`sql_mode`, `max_connections`, `default_authentication_plugin`, `innodb_print_all_deadlocks`) are filled with module defaults when omitted.<br/>  Detail info in https://terraform-provider.yandexcloud.net/Resources/mdb_mysql_cluster.html#mysql-config | `map(string)` | `null` | no |
@@ -166,7 +184,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_access"></a> [access](#output\_access) | The access settings of the MySQL cluster |
 | <a name="output_backup_retain_period_days"></a> [backup\_retain\_period\_days](#output\_backup\_retain\_period\_days) | The number of days to retain backups for the MySQL cluster |
 | <a name="output_backup_window_start"></a> [backup\_window\_start](#output\_backup\_window\_start) | The backup window start time of the MySQL cluster |
@@ -175,6 +193,7 @@ No modules.
 | <a name="output_disk_size_autoscaling"></a> [disk\_size\_autoscaling](#output\_disk\_size\_autoscaling) | The disk size autoscaling settings of the MySQL cluster |
 | <a name="output_environment"></a> [environment](#output\_environment) | The deployment environment of the MySQL cluster |
 | <a name="output_fqdn"></a> [fqdn](#output\_fqdn) | The fully qualified domain name of the MySQL cluster |
+| <a name="output_host_details"></a> [host\_details](#output\_host\_details) | List of MySQL cluster hosts with names, zones and replication sources |
 | <a name="output_host_group_ids"></a> [host\_group\_ids](#output\_host\_group\_ids) | The list of host group IDs used for the MySQL cluster |
 | <a name="output_hosts"></a> [hosts](#output\_hosts) | List of host FQDNs in the MySQL cluster |
 | <a name="output_id"></a> [id](#output\_id) | The ID of the MySQL cluster |

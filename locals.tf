@@ -1,6 +1,22 @@
 locals {
   folder_id = var.folder_id == null ? data.yandex_client_config.client.folder_id : var.folder_id
 
+  host_indexes = var.ha ? range(var.count_ha) : [0]
+
+  # Explicit `hosts` takes precedence over the automatic layout, so read
+  # replicas and per-host settings can be configured.
+  hosts = var.hosts != null ? var.hosts : [
+    for index in local.host_indexes : {
+      zone                    = element(var.subnet_zones, index)
+      subnet_id               = element(var.subnet_id, index)
+      name                    = "${var.name}-db-host-${index + 1}"
+      priority                = index * 10
+      backup_priority         = index
+      assign_public_ip        = var.assign_public_ip
+      replication_source_name = null
+    }
+  ]
+
   # Well-known MySQL parameters get module defaults, any other parameter
   # supported by the provider can be passed through `mysql_config`.
   default_mysql_config = {

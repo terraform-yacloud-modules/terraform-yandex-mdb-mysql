@@ -18,6 +18,11 @@ output "hosts" {
   value       = module.mysql.hosts
 }
 
+output "host_details" {
+  description = "List of MySQL cluster hosts with names, zones and replication sources"
+  value       = module.mysql.host_details
+}
+
 output "network_id" {
   description = "The ID of the network to which the MySQL cluster belongs"
   value       = module.mysql.network_id
