@@ -26,6 +26,64 @@ variable "count_ha" {
   }
 }
 
+variable "hosts" {
+  type = list(object({
+    zone                    = string
+    subnet_id               = string
+    name                    = optional(string)
+    priority                = optional(number, 0)
+    backup_priority         = optional(number, 0)
+    assign_public_ip        = optional(bool, false)
+    replication_source_name = optional(string)
+  }))
+  default     = null
+  description = <<EOF
+  (Optional) Explicit list of MySQL cluster hosts. When set, it replaces the automatic layout built from `ha`, `count_ha`, `subnet_zones`, `subnet_id` and `assign_public_ip`.
+  Each host supports:
+  zone                    - (Required) Availability zone of the host.
+  subnet_id               - (Required) ID of the subnet, to which the host belongs.
+  name                    - (Optional) Host name. Must be set for all hosts or left unset for all hosts.
+  priority                - (Optional) Host master promotion priority, 0-100. Default 0.
+  backup_priority         - (Optional) Host backup priority, 0-100. Default 0.
+  assign_public_ip        - (Optional) Assign a public IP address to the host. Default false.
+  replication_source_name - (Optional) Name of the host to replicate from. Makes the host a read replica and requires `name`.
+  EOF
+  validation {
+    condition     = var.hosts == null ? true : length(var.hosts) > 0
+    error_message = "The hosts list must not be empty."
+  }
+  validation {
+    condition = var.hosts == null ? true : (
+      length([for host in var.hosts : host.name if host.name != null]) == 0 ||
+      length([for host in var.hosts : host.name if host.name != null]) == length(var.hosts)
+    )
+    error_message = "Host names must be set for all hosts or left unset for all hosts."
+  }
+  validation {
+    condition = var.hosts == null ? true : (
+      length(distinct([for host in var.hosts : host.name if host.name != null])) ==
+      length([for host in var.hosts : host.name if host.name != null])
+    )
+    error_message = "Host names must be unique."
+  }
+  validation {
+    condition = var.hosts == null ? true : alltrue([
+      for host in var.hosts : (
+        host.replication_source_name == null ? true : contains([for item in var.hosts : item.name], host.replication_source_name)
+      )
+    ])
+    error_message = "Each replication_source_name must reference the name of another host from the hosts list."
+  }
+  validation {
+    condition = var.hosts == null ? true : alltrue([
+      for host in var.hosts : (
+        host.priority >= 0 && host.priority <= 100 && host.backup_priority >= 0 && host.backup_priority <= 100
+      )
+    ])
+    error_message = "Host priority and backup_priority must be between 0 and 100."
+  }
+}
+
 variable "name" {
   type        = string
   description = "(Required) Name of the MySQL cluster. Provided by the client when the cluster is created."

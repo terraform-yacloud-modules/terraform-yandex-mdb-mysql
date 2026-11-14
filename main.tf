@@ -27,17 +27,15 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
   }
 
   dynamic "host" {
-    for_each = (var.ha ? range(var.count_ha) : [1])
+    for_each = local.hosts
     content {
-      zone             = element(var.subnet_zones, host.key)
-      subnet_id        = element(var.subnet_id, host.key)
-      name             = "${var.name}-db-host-${host.key + 1}"
-      priority         = host.key * 10
-      assign_public_ip = var.assign_public_ip
-      backup_priority  = host.key
-      #TODO
-      # replication_source_name
-      # (Optional) Host replication source name points to host's name from which this host should replicate. When not set then host in HA group. It works only when name is set.
+      zone                    = host.value.zone
+      subnet_id               = host.value.subnet_id
+      name                    = host.value.name
+      priority                = host.value.priority
+      assign_public_ip        = host.value.assign_public_ip
+      backup_priority         = host.value.backup_priority
+      replication_source_name = host.value.replication_source_name
     }
   }
 

@@ -13,7 +13,7 @@ module "network" {
     repo = "terraform-yacloud-modules/terraform-yandex-vpc"
   }
 
-  azs = ["ru-central1-a"]
+  azs = ["ru-central1-d"]
 
   private_subnets = [["10.4.0.0/24"]]
 
@@ -30,13 +30,13 @@ module "mysql" {
   environment  = "PRODUCTION"
   folder_id    = coalesce(var.folder_id, data.yandex_client_config.client.folder_id)
   network_id   = module.network.vpc_id
-  subnet_zones = ["ru-central1-a"]
+  subnet_zones = ["ru-central1-d"]
   subnet_id    = [module.network.private_subnets_ids[0]]
   labels = {
     created_by = "terraform_mysql_module"
   }
   version_sql        = "8.0"
-  resource_preset_id = "s1.micro"
+  resource_preset_id = "b2.medium"
   disk_type_id       = "network-ssd"
   disk_size          = 10
 
@@ -89,10 +89,32 @@ module "mysql" {
   }
 
   # Другие настройки
-  ha                  = false
   deletion_protection = false
-  assign_public_ip    = false
-  count_ha            = 3
+
+  # Явное размещение хостов: два HA-хоста и каскадная реплика
+  hosts = [
+    {
+      zone             = "ru-central1-d"
+      subnet_id        = module.network.private_subnets_ids[0]
+      name             = "mysql-primary"
+      priority         = 10
+      backup_priority  = 5
+      assign_public_ip = false
+    },
+    {
+      zone            = "ru-central1-d"
+      subnet_id       = module.network.private_subnets_ids[0]
+      name            = "mysql-secondary"
+      priority        = 5
+      backup_priority = 10
+    },
+    {
+      zone                    = "ru-central1-d"
+      subnet_id               = module.network.private_subnets_ids[0]
+      name                    = "mysql-replica"
+      replication_source_name = "mysql-primary"
+    },
+  ]
 
   depends_on = [module.network]
 

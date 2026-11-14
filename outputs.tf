@@ -18,6 +18,18 @@ output "hosts" {
   value       = [for host in yandex_mdb_mysql_cluster.mysql.host : host.fqdn]
 }
 
+output "host_details" {
+  description = "List of MySQL cluster hosts with names, zones and replication sources"
+  value = [
+    for host in yandex_mdb_mysql_cluster.mysql.host : {
+      name               = host.name
+      zone               = host.zone
+      fqdn               = host.fqdn
+      replication_source = host.replication_source
+    }
+  ]
+}
+
 output "network_id" {
   description = "The ID of the network to which the MySQL cluster belongs"
   value       = yandex_mdb_mysql_cluster.mysql.network_id
