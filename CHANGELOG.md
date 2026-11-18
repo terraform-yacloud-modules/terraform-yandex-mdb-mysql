@@ -1,3 +1,7 @@
+## v1.44.0 - 2026-11-18
+### Miscellaneous
+- b6716f0 ci: run semver job only on push to main ([#78](https://github.com/terraform-yacloud-modules/terraform-yandex-mdb-mysql/pull/78))
+
 ## v1.43.0 - 2026-11-14
 ### Features
 - 808e4d3 feat: add explicit host layout with cascading read replicas ([#77](https://github.com/terraform-yacloud-modules/terraform-yandex-mdb-mysql/pull/77))
