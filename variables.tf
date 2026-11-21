@@ -456,3 +456,56 @@ variable "user_roles" {
   description = "(Optional) Roles for the single MySQL user. Ignored when `users` is set."
   default     = ["ALL"]
 }
+
+variable "backup_retention_policy" {
+  type = object({
+    policy_name     = string
+    description     = optional(string)
+    retain_for_days = optional(number)
+    cron = optional(object({
+      day_of_month = optional(string)
+      month        = optional(string)
+      day_of_week  = optional(string)
+    }))
+  })
+  default     = null
+  description = <<EOF
+  (Optional) Backup retention policy for the MySQL cluster. When set, an
+  additional `yandex_mdb_mysql_backup_retention_policy` resource is created.
+  The API does not support updates: changing any field recreates the policy.
+
+  policy_name     - (Required) Name of the retention policy.
+  description     - (Optional) Human-readable description.
+  retain_for_days - (Optional) Retention duration in days, from 7 to 1095.
+  cron            - (Optional) Cron schedule of the policy. Each field accepts
+                    cron syntax (`*`, ranges, steps and lists), e.g. `"1-5"`,
+                    `"*/2"`, `"1,15,28"`. Defaults are applied by the API.
+                    Managed MySQL does not support the `minute` and `hour`
+                    fields, so they are not exposed by the module.
+
+  backup_retention_policy = {
+    policy_name     = "keep-monthly-backups"
+    description     = "Keep backups for 30 days"
+    retain_for_days = 30
+    cron = {
+      day_of_month = "*"
+      month        = "*"
+      day_of_week  = "1"
+    }
+  }
+  EOF
+  validation {
+    condition     = var.backup_retention_policy == null ? true : length(trimspace(var.backup_retention_policy.policy_name)) > 0
+    error_message = "The backup retention policy name must not be empty."
+  }
+  validation {
+    condition = (
+      var.backup_retention_policy == null ? true : (
+        var.backup_retention_policy.retain_for_days == null ? true : (
+          var.backup_retention_policy.retain_for_days >= 7 && var.backup_retention_policy.retain_for_days <= 1095
+        )
+      )
+    )
+    error_message = "The backup retention period must be between 7 and 1095 days."
+  }
+}

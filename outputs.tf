@@ -124,3 +124,20 @@ output "disk_size_autoscaling" {
   description = "The disk size autoscaling settings of the MySQL cluster"
   value       = yandex_mdb_mysql_cluster.mysql.disk_size_autoscaling
 }
+
+output "backup_retention_policy_id" {
+  description = "The ID of the backup retention policy created for the MySQL cluster"
+  value       = var.backup_retention_policy == null ? null : yandex_mdb_mysql_backup_retention_policy.mysql[0].id
+}
+
+output "backup_retention_policy" {
+  description = "The backup retention policy created for the MySQL cluster"
+  value = var.backup_retention_policy == null ? null : {
+    id              = yandex_mdb_mysql_backup_retention_policy.mysql[0].id
+    policy_id       = yandex_mdb_mysql_backup_retention_policy.mysql[0].policy_id
+    policy_name     = yandex_mdb_mysql_backup_retention_policy.mysql[0].policy_name
+    description     = yandex_mdb_mysql_backup_retention_policy.mysql[0].description
+    retain_for_days = yandex_mdb_mysql_backup_retention_policy.mysql[0].retain_for_days
+    cron            = yandex_mdb_mysql_backup_retention_policy.mysql[0].cron
+  }
+}

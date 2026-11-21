@@ -2,6 +2,49 @@
 
 Terraform module which creates Yandex Cloud **Managed Service for MySQL** resources.
 
+## Описание
+
+Модуль создаёт управляемый кластер MySQL в Yandex Cloud и связанные с ним
+ресурсы: группу безопасности, базы данных и пользователей.
+
+Возможности модуля:
+
+- автоматическое или явное размещение хостов, включая каскадные реплики
+  (`hosts`, `ha`, `count_ha`);
+- несколько баз данных и пользователей с правами, лимитами подключений и
+  плагинами аутентификации (`databases`, `users`);
+- настройка параметров MySQL (`mysql_config`), окна обслуживания и резервного
+  копирования;
+- диагностика производительности, автоскейлинг диска, шифрование диска и
+  размещение на выделенных группах хостов;
+- политика хранения резервных копий (`backup_retention_policy`).
+
+### Политика хранения резервных копий
+
+Параметр `backup_retention_policy` создаёт ресурс
+`yandex_mdb_mysql_backup_retention_policy` и позволяет задать собственное
+расписание хранения копий:
+
+```hcl
+backup_retention_policy = {
+  policy_name     = "keep-monthly-backups"
+  description     = "Хранить резервные копии 30 дней"
+  retain_for_days = 30
+  cron = {
+    day_of_month = "*"
+    month        = "*"
+    day_of_week  = "1"
+  }
+}
+```
+
+`retain_for_days` принимает значения от 7 до 1095 дней. Поля `cron`
+поддерживают синтаксис crontab: `*`, диапазоны (`1-5`), шаги (`*/2`) и
+перечисления (`1,15,28`). Managed MySQL не поддерживает поля `minute` и
+`hour`, поэтому модуль их не предоставляет. API не поддерживает изменение
+политики, поэтому любое изменение её параметров приводит к пересозданию
+ресурса.
+
 ## Example
 
 ```
@@ -63,6 +106,17 @@ module "mysql" {
   backup_window_start = {
     hours   = 23
     minutes = 59
+  }
+
+  backup_retention_policy = {
+    policy_name     = "keep-monthly-backups"
+    description     = "Keep backups for 30 days"
+    retain_for_days = 30
+    cron = {
+      day_of_month = "*"
+      month        = "*"
+      day_of_week  = "1"
+    }
   }
 
   access = {
@@ -132,6 +186,7 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
+| [yandex_mdb_mysql_backup_retention_policy.mysql](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/mdb_mysql_backup_retention_policy) | resource |
 | [yandex_mdb_mysql_cluster.mysql](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/mdb_mysql_cluster) | resource |
 | [yandex_mdb_mysql_database.additional](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/mdb_mysql_database) | resource |
 | [yandex_mdb_mysql_database.mysql_db](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/mdb_mysql_database) | resource |
@@ -149,6 +204,7 @@ No modules.
 | <a name="input_assign_public_ip"></a> [assign\_public\_ip](#input\_assign\_public\_ip) | (Optional) Sets whether the host should get a public IP address. It can be changed on the fly only when name is set. | `bool` | `false` | no |
 | <a name="input_attach_security_group_ids"></a> [attach\_security\_group\_ids](#input\_attach\_security\_group\_ids) | (Optional) Attach an additional security group. | `list(string)` | `null` | no |
 | <a name="input_backup_retain_period_days"></a> [backup\_retain\_period\_days](#input\_backup\_retain\_period\_days) | (Optional) The period in days during which backups are stored. | `number` | `null` | no |
+| <a name="input_backup_retention_policy"></a> [backup\_retention\_policy](#input\_backup\_retention\_policy) | (Optional) Backup retention policy for the MySQL cluster. When set, an<br/>  additional `yandex_mdb_mysql_backup_retention_policy` resource is created.<br/>  The API does not support updates: changing any field recreates the policy.<br/><br/>  policy\_name     - (Required) Name of the retention policy.<br/>  description     - (Optional) Human-readable description.<br/>  retain\_for\_days - (Optional) Retention duration in days, from 7 to 1095.<br/>  cron            - (Optional) Cron schedule of the policy. Each field accepts<br/>                    cron syntax (`*`, ranges, steps and lists), e.g. `"1-5"`,<br/>                    `"*/2"`, `"1,15,28"`. Defaults are applied by the API.<br/>                    Managed MySQL does not support the `minute` and `hour`<br/>                    fields, so they are not exposed by the module.<br/><br/>  backup\_retention\_policy = {<br/>    policy\_name     = "keep-monthly-backups"<br/>    description     = "Keep backups for 30 days"<br/>    retain\_for\_days = 30<br/>    cron = {<br/>      day\_of\_month = "*"<br/>      month        = "*"<br/>      day\_of\_week  = "1"<br/>    }<br/>  } | <pre>object({<br/>    policy_name     = string<br/>    description     = optional(string)<br/>    retain_for_days = optional(number)<br/>    cron = optional(object({<br/>      day_of_month = optional(string)<br/>      month        = optional(string)<br/>      day_of_week  = optional(string)<br/>    }))<br/>  })</pre> | `null` | no |
 | <a name="input_backup_window_start"></a> [backup\_window\_start](#input\_backup\_window\_start) | (Optional) Time to start the daily backup, in the UTC. | <pre>object({<br/>    hours   = optional(number)<br/>    minutes = optional(number)<br/>  })</pre> | `null` | no |
 | <a name="input_count_ha"></a> [count\_ha](#input\_count\_ha) | (Optional) Number of hosts in a high availability cluster | `number` | `3` | no |
 | <a name="input_database_name"></a> [database\_name](#input\_database\_name) | (Optional) Name of the single MySQL database. Ignored when `databases` is set. | `string` | `"default_db"` | no |
@@ -187,6 +243,8 @@ No modules.
 | ---- | ----------- |
 | <a name="output_access"></a> [access](#output\_access) | The access settings of the MySQL cluster |
 | <a name="output_backup_retain_period_days"></a> [backup\_retain\_period\_days](#output\_backup\_retain\_period\_days) | The number of days to retain backups for the MySQL cluster |
+| <a name="output_backup_retention_policy"></a> [backup\_retention\_policy](#output\_backup\_retention\_policy) | The backup retention policy created for the MySQL cluster |
+| <a name="output_backup_retention_policy_id"></a> [backup\_retention\_policy\_id](#output\_backup\_retention\_policy\_id) | The ID of the backup retention policy created for the MySQL cluster |
 | <a name="output_backup_window_start"></a> [backup\_window\_start](#output\_backup\_window\_start) | The backup window start time of the MySQL cluster |
 | <a name="output_database_names"></a> [database\_names](#output\_database\_names) | List of database names created in the MySQL cluster |
 | <a name="output_disk_encryption_key_id"></a> [disk\_encryption\_key\_id](#output\_disk\_encryption\_key\_id) | The ID of the disk encryption key used for the MySQL cluster |

@@ -66,6 +66,18 @@ module "mysql" {
   }
   backup_retain_period_days = 14
 
+  # Политика хранения резервных копий
+  backup_retention_policy = {
+    policy_name     = "keep-monthly-backups"
+    description     = "Хранить резервные копии 30 дней"
+    retain_for_days = 30
+    cron = {
+      day_of_month = "*"
+      month        = "*"
+      day_of_week  = "1"
+    }
+  }
+
   # Настройки доступа
   access = {
     data_lens     = false
