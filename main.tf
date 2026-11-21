@@ -98,6 +98,30 @@ resource "yandex_mdb_mysql_cluster" "mysql" {
   }
 }
 
+resource "yandex_mdb_mysql_backup_retention_policy" "mysql" {
+  count = var.backup_retention_policy == null ? 0 : 1
+
+  # The API rejects a new operation while another cluster operation is still
+  # running, so the policy is created after databases and users.
+  depends_on = [
+    yandex_mdb_mysql_database.mysql_db,
+    yandex_mdb_mysql_database.additional,
+    yandex_mdb_mysql_user.mysql_user,
+    yandex_mdb_mysql_user.additional,
+  ]
+
+  cluster_id      = yandex_mdb_mysql_cluster.mysql.id
+  policy_name     = var.backup_retention_policy.policy_name
+  description     = var.backup_retention_policy.description
+  retain_for_days = var.backup_retention_policy.retain_for_days
+
+  cron = var.backup_retention_policy.cron == null ? null : {
+    day_of_month = var.backup_retention_policy.cron.day_of_month
+    month        = var.backup_retention_policy.cron.month
+    day_of_week  = var.backup_retention_policy.cron.day_of_week
+  }
+}
+
 resource "yandex_mdb_mysql_database" "mysql_db" {
   cluster_id = yandex_mdb_mysql_cluster.mysql.id
   name       = local.primary_database

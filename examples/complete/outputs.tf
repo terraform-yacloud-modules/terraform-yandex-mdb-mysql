@@ -82,3 +82,13 @@ output "user_names" {
   description = "List of user names created in the MySQL cluster"
   value       = module.mysql.user_names
 }
+
+output "backup_retention_policy_id" {
+  description = "The ID of the backup retention policy created for the MySQL cluster"
+  value       = module.mysql.backup_retention_policy_id
+}
+
+output "backup_retention_policy" {
+  description = "The backup retention policy created for the MySQL cluster"
+  value       = module.mysql.backup_retention_policy
+}
